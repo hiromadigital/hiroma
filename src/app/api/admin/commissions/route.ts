@@ -19,7 +19,7 @@ export async function GET(req: NextRequest) {
       // Exclude multilevel from display
       type: type !== 'all'
         ? type
-        : { in: ['direct_referral', 'binary_pairing', 'sponsor_point'] },
+        : { in: ['direct_referral', 'binary_pairing', 'sponsor_point', 'rank_bonus'] },
       ...(search && {
         user: {
           OR: [
@@ -50,7 +50,7 @@ export async function GET(req: NextRequest) {
     const [allSummary, overflowCount] = await Promise.all([
       prisma.commission.groupBy({
         by:    ['type'],
-        where: { type: { in: ['direct_referral', 'binary_pairing', 'sponsor_point'] } },
+        where: { type: { in: ['direct_referral', 'binary_pairing', 'sponsor_point', 'rank_bonus'] } },
         _sum:  { amount: true, points: true },
         _count: { id: true },
       }),
@@ -63,6 +63,7 @@ export async function GET(req: NextRequest) {
       direct_referral: { amount: 0, count: 0 },
       binary_pairing:  { amount: 0, count: 0 },
       sponsor_point:   { amount: 0, count: 0 },
+      rank_bonus:      { amount: 0, count: 0 },
     }
     let total_amount = 0
     let total_points = 0
@@ -79,7 +80,7 @@ export async function GET(req: NextRequest) {
 
     const total_records = (typeMap.direct_referral.count || 0) +
                           (typeMap.binary_pairing.count  || 0) +
-                          (typeMap.sponsor_point.count   || 0)
+                          (typeMap.sponsor_point.count   || 0) + (typeMap.rank_bonus.count || 0)
 
     return NextResponse.json({
       commissions,

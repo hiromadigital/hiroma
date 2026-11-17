@@ -1,12 +1,14 @@
 'use client'
 
+import RankBonusSettings from '@/app/components/admin/RankBonusSettings'
+import RankBonusReconciliation from '@/app/components/admin/RankBonusReconciliation'
+
 import { useState, useEffect, useRef } from 'react'
 
 interface Package { id: string; name: string; point_php_value: number }
 interface Rank    { id?: string; package_id: string; name: string; sequence: number; required_pu: number; pair_income: number }
 interface Period  { id?: string; package_id: string; start_date: string; end_date: string; is_active: boolean }
 
-const fmt     = (n: number) => `₱${Number(n).toLocaleString('en-PH', { minimumFractionDigits: 2 })}`
 const fmtDate = (d: string) => new Date(d).toLocaleDateString('en-PH', { month: 'short', day: 'numeric', year: 'numeric' })
 
 const EMPTY_RANK = (pkgId: string, seq: number): Rank => ({ package_id: pkgId, name: '', sequence: seq, required_pu: 0, pair_income: 0 })
@@ -126,17 +128,11 @@ export default function AdminRanksPage() {
       {/* Header */}
       <div className="mb-6">
         <h1 className="text-xl font-semibold text-[#0D1B3E]">Rank System</h1>
-        <p className="text-sm text-gray-400 mt-0.5">Configure rank milestones per package with custom names and active periods</p>
+        <p className="text-sm text-gray-400 mt-0.5">Manage quarterly Rank Advancement bonuses and package qualification settings.</p>
       </div>
 
-      {/* Info banner */}
-      <div className="bg-[#010521]/5 border border-[#0D1B3E]/10 rounded-xl px-4 py-3 mb-5 text-xs text-gray-500 leading-relaxed">
-        <p className="font-medium text-[#0D1B3E] mb-1">How it works</p>
-        All packages and ranks use the fixed payout in <strong>Admin Settings → Product Binary matching</strong>. Rank names and required PU remain customizable.
-        Qualification PU resets automatically every calendar quarter.
-        Rule: <strong>Equal qualifying PU from each leg = 1 pair</strong>. Each point = <strong>₱0.50</strong>.
-      </div>
-
+      <RankBonusSettings />
+      <RankBonusReconciliation />
       <div className="rounded-xl border border-[#0D1B3E]/10 bg-white p-5 mb-5">
         <div className="flex flex-wrap items-start justify-between gap-4">
           <div>
@@ -283,26 +279,26 @@ export default function AdminRanksPage() {
           <div className="bg-white rounded-xl border border-[#0D1B3E]/8 overflow-hidden">
             <div className="flex items-center justify-between px-4 py-3 border-b border-[#0D1B3E]/8">
               <div>
-                <p className="text-sm font-semibold text-[#0D1B3E]">Rank Milestones</p>
-                <p className="text-xs text-gray-400">Custom rank names — ordered by sequence. Base = {activePkg?.point_php_value} pts/pair</p>
+                <p className="text-sm font-semibold text-[#0D1B3E]">Package PU Ranks</p>
+                <p className="text-xs text-gray-400">Rank names and Personal PU thresholds by package.</p>
               </div>
               <button onClick={() => { setAddingRank(true); setNewRank(EMPTY_RANK(activeTab, nextSeq)); setError('') }} disabled={nextSeq > 3}
                 className="text-xs text-[#C9A84C] hover:underline font-medium">+ Add Rank</button>
             </div>
 
             {/* Table header */}
-            <div className="grid grid-cols-5 px-4 py-2 bg-[#F0F2F8] text-[10px] text-gray-400 uppercase tracking-wide font-medium">
-              <p>#</p><p>Rank Name</p><p>Required PU</p><p>Points/Pair</p><p>PHP/Pair</p>
+            <div className="grid grid-cols-4 px-4 py-2 bg-[#F0F2F8] text-[10px] text-gray-400 uppercase tracking-wide font-medium">
+              <p>#</p><p>Rank Name</p><p>Required PU</p><p>Actions</p>
             </div>
 
             {activeRanks.length === 0 && !addingRank ? (
-              <p className="text-xs text-gray-400 text-center py-8">No ranks configured — resellers use base package points</p>
+              <p className="text-xs text-gray-400 text-center py-8">No package PU ranks configured</p>
             ) : (
               <>
                 {activeRanks.map(rank => (
                   <div key={rank.id} className="border-b border-[#0D1B3E]/5 last:border-0">
                     {editRank?.id === rank.id ? (
-                      <div className="grid grid-cols-5 gap-2 px-4 py-2 items-center">
+                      <div className="grid grid-cols-4 gap-2 px-4 py-2 items-center">
                         <input type="number" min="1" value={editRank.sequence}
                           onChange={e => setEditRank({ ...editRank, sequence: Number(e.target.value) })}
                           className="border border-[#0D1B3E]/15 rounded px-2 py-1 text-xs outline-none focus:border-[#C9A84C] w-12" />
@@ -313,9 +309,6 @@ export default function AdminRanksPage() {
                         <input type="number" min="0" value={editRank.required_pu}
                           onChange={e => setEditRank({ ...editRank, required_pu: Number(e.target.value) })}
                           className="border border-[#0D1B3E]/15 rounded px-2 py-1 text-xs outline-none focus:border-[#C9A84C]" />
-                        <input type="number" value={10}
-                          readOnly aria-label="Fixed Product Binary points per pair"
-                          className="border border-[#0D1B3E]/10 rounded bg-gray-50 px-2 py-1 text-xs text-gray-500" />
                         <div className="flex gap-1.5">
                           <button onClick={() => handleSaveRank(editRank)} disabled={saving}
                             className="text-xs text-[#1a7a4a] font-medium hover:underline disabled:opacity-50">{saving ? '...' : 'Save'}</button>
@@ -323,13 +316,11 @@ export default function AdminRanksPage() {
                         </div>
                       </div>
                     ) : (
-                      <div className="grid grid-cols-5 px-4 py-3 items-center hover:bg-[#F8F9FC] transition-colors">
+                      <div className="grid grid-cols-4 px-4 py-3 items-center hover:bg-[#F8F9FC] transition-colors">
                         <p className="text-xs text-gray-400 font-mono">{rank.sequence}</p>
                         <p className="text-xs font-semibold text-[#0D1B3E]">{rank.name}</p>
                         <p className="text-xs text-[#0D1B3E]">{rank.required_pu} PU</p>
-                        <p className="text-xs font-semibold text-[#1a7a4a]">{rank.pair_income} pts</p>
                         <div className="flex items-center justify-between">
-                          <p className="text-xs text-gray-400">{fmt(rank.pair_income * 0.50)}</p>
                           <div className="flex gap-1">
                             <button onClick={() => setEditRank({ ...rank })}
                               className="w-6 h-6 rounded bg-[#eef0f8] hover:bg-[#010521] flex items-center justify-center transition-colors group">
@@ -352,7 +343,7 @@ export default function AdminRanksPage() {
 
                 {/* Add new rank row */}
                 {addingRank && newRank && (
-                  <div className="grid grid-cols-5 gap-2 px-4 py-2 items-center bg-[#fef9ee] border-t border-[#C9A84C]/20">
+                  <div className="grid grid-cols-4 gap-2 px-4 py-2 items-center bg-[#fef9ee] border-t border-[#C9A84C]/20">
                     <input type="number" min="1" value={newRank.sequence}
                       onChange={e => setNewRank({ ...newRank, sequence: Number(e.target.value) })}
                       className="border border-[#C9A84C]/40 rounded px-2 py-1 text-xs outline-none focus:border-[#C9A84C] w-12" />
@@ -364,9 +355,6 @@ export default function AdminRanksPage() {
                       onChange={e => setNewRank({ ...newRank, required_pu: Number(e.target.value) })}
                       placeholder="PU needed"
                       className="border border-[#C9A84C]/40 rounded px-2 py-1 text-xs outline-none focus:border-[#C9A84C]" />
-                    <input type="number" value={10}
-                      readOnly aria-label="Fixed Product Binary points per pair"
-                      className="border border-[#C9A84C]/20 rounded bg-white/70 px-2 py-1 text-xs text-gray-500" />
                     <div className="flex gap-1.5">
                       <button onClick={() => handleSaveRank(newRank)} disabled={saving || !newRank.name}
                         className="text-xs bg-[#C9A84C] text-white px-2 py-1 rounded disabled:opacity-50">{saving ? '...' : 'Add'}</button>
@@ -389,10 +377,9 @@ export default function AdminRanksPage() {
                 <div className="flex flex-col items-center min-w-[80px]">
                   <div className="w-10 h-10 rounded-full bg-[#eef0f8] flex items-center justify-center text-lg">👤</div>
                   <p className="text-[9px] text-gray-400 mt-1 text-center">Base</p>
-                  <p className="text-[9px] font-semibold text-[#0D1B3E]">{activePkg?.point_php_value} pts</p>
                   <p className="text-[9px] text-gray-400">0 PU</p>
                 </div>
-                {activeRanks.map((rank, idx) => (
+                {activeRanks.map(rank => (
                   <div key={rank.id} className="flex items-center gap-2">
                     <div className="flex flex-col items-center">
                       <div className="w-px h-3 bg-gray-200" />
@@ -403,8 +390,6 @@ export default function AdminRanksPage() {
                         {rank.sequence}
                       </div>
                       <p className="text-[9px] font-semibold text-[#0D1B3E] mt-1 text-center">{rank.name}</p>
-                      <p className="text-[9px] text-[#1a7a4a] font-semibold">{rank.pair_income} pts</p>
-                      <p className="text-[9px] text-gray-400">{fmt(rank.pair_income * 0.50)}/pair</p>
                     </div>
                   </div>
                 ))}

@@ -102,6 +102,7 @@ export async function GET(req:NextRequest){
            SELECT amount FROM direct_referral_payout_consumptions WHERE payout_id=payout.id
            UNION ALL SELECT amount FROM binary_payout_consumptions WHERE payout_id=payout.id
            UNION ALL SELECT amount FROM product_binary_payout_consumptions WHERE payout_id=payout.id
+           UNION ALL SELECT amount FROM rank_bonus_payout_consumptions WHERE payout_id=payout.id
          ) sources
        ) allocation
        WHERE ledger.reservation_count<>1 OR ledger.reservation_amount<>payout.amount

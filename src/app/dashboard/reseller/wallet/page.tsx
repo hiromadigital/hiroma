@@ -23,6 +23,7 @@ interface CommissionSummary {
   binary_pairing:  { amount: number; count: number }
   multilevel:      { amount: number; count: number }
   sponsor_point:   { amount: number; count: number }
+  rank_bonus:      { amount: number; count: number }
 }
 
 interface Commission {
@@ -50,12 +51,13 @@ interface Payout {
 }
 
 const PAGE_SIZE = 10
-type CommissionFilter = 'all' | 'direct_referral' | 'binary_pairing' | 'sponsor_point'
+type CommissionFilter = 'all' | 'direct_referral' | 'binary_pairing' | 'sponsor_point' | 'rank_bonus'
 
 const COMMISSION_ICONS: Record<string, string> = {
   direct_referral: '👥',
   binary_pairing:  '🔗',
   sponsor_point:   '📦',
+  rank_bonus:      '🏅',
   multilevel:      '🏆',
 }
 
@@ -64,6 +66,7 @@ const COMMISSION_LABELS: Record<string, string> = {
   binary_pairing:  'Binary Pairing',
   multilevel:      'Multi-level',
   sponsor_point:   'Product Binary',
+  rank_bonus:      'Rank Advancement Bonus',
 }
 
 const COMMISSION_COLORS: Record<string, string> = {
@@ -71,6 +74,7 @@ const COMMISSION_COLORS: Record<string, string> = {
   binary_pairing:  '#0D1B3E',
   multilevel:      '#2563eb',
   sponsor_point:   '#168052',
+  rank_bonus:      '#9a6f1e',
 }
 
 const PAYOUT_STATUS_COLORS: Record<string, string> = {

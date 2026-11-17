@@ -1,5 +1,7 @@
 // src/app/api/admin/resellers/[id]/status/route.ts
 import { NextRequest, NextResponse } from 'next/server'
+import { Prisma } from '@prisma/client'
+import { rankBonusStorageReady } from '@/app/lib/rankBonuses'
 import { createRequiredAuditLog, formatMemberId, getClientInfo } from '@/app/lib/auditLog'
 import { getCurrentUser } from '@/app/lib/auth'
 import prisma from '@/app/lib/prisma'
@@ -71,6 +73,9 @@ export async function PATCH(req: NextRequest, { params }: { params: Promise<{ id
             COALESCE((SELECT SUM(remaining_amount) FROM direct_referral_reserve_lots WHERE user_id=${userId}), 0)
             + COALESCE((SELECT SUM(remaining_amount) FROM binary_payable_lots WHERE user_id=${userId}), 0)
             + COALESCE((SELECT SUM(remaining_amount) FROM product_binary_payable_lots WHERE user_id=${userId}), 0)
+            ${await rankBonusStorageReady(tx)
+              ? Prisma.sql`+ COALESCE((SELECT SUM(remaining_amount) FROM rank_bonus_awards WHERE user_id=${userId}), 0)`
+              : Prisma.empty}
           )::text AS funded_liability
         `
         const walletBalance = Number(wallet.balance)

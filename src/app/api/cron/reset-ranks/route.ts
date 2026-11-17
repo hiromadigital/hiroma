@@ -1,6 +1,7 @@
 import { NextRequest, NextResponse } from 'next/server'
 import prisma from '@/app/lib/prisma'
 import { getManilaQuarter } from '@/app/lib/productBinaryQuarter'
+import { processRankBonusAwards } from '@/app/lib/rankBonuses'
 
 export const maxDuration = 60
 
@@ -25,7 +26,8 @@ export async function GET(req: NextRequest) {
       WHERE qualification_quarter_start IS NULL OR qualification_quarter_start <> ${quarter.start}
     `
     console.log(`[CRON] Reset ${reset} reseller qualification(s) for ${quarter.label}`)
-    return NextResponse.json({ success: true, reset, quarter: quarter.label })
+    const rankBonusesCredited = await processRankBonusAwards()
+    return NextResponse.json({ success: true, reset, quarter: quarter.label, rankBonusesCredited })
   } catch (error) {
     console.error('[CRON RESET RANKS ERROR]', error)
     return NextResponse.json({ error: 'Something went wrong.' }, { status: 500 })
