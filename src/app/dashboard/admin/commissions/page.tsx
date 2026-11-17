@@ -20,18 +20,21 @@ const TYPE_LABELS: Record<string, string> = {
   direct_referral: 'Direct Referral',
   binary_pairing:  'Binary Pairing',
   sponsor_point:   'Product Binary',
+  rank_bonus:      'Rank Advancement Bonus',
 }
 
 const TYPE_COLORS: Record<string, string> = {
   direct_referral: '#C9A84C',
   binary_pairing:  '#2563eb',
   sponsor_point:   '#1a7a4a',
+  rank_bonus:      '#9a6f1e',
 }
 
 const TYPE_ICONS: Record<string, string> = {
   direct_referral: '🤝',
   binary_pairing:  '🌳',
   sponsor_point:   '📦',
+  rank_bonus:      '🏅',
 }
 
 const fmt = (n: number) => `₱${Number(n).toLocaleString('en-PH', { minimumFractionDigits: 2, maximumFractionDigits: 2 })}`
@@ -59,6 +62,7 @@ export default function AdminCommissionsPage() {
     direct_referral:    { amount: number; count: number }
     binary_pairing:     { amount: number; count: number }
     sponsor_point:      { amount: number; count: number }
+    rank_bonus:         { amount: number; count: number }
   }>({
     total_records:       0,
     total_amount:        0,
@@ -67,6 +71,7 @@ export default function AdminCommissionsPage() {
     direct_referral:     { amount: 0, count: 0 },
     binary_pairing:      { amount: 0, count: 0 },
     sponsor_point:       { amount: 0, count: 0 },
+    rank_bonus:          { amount: 0, count: 0 },
   })
 
   useEffect(() => {
@@ -93,6 +98,7 @@ export default function AdminCommissionsPage() {
           direct_referral:    s.direct_referral    || { amount: 0, count: 0 },
           binary_pairing:     s.binary_pairing     || { amount: 0, count: 0 },
           sponsor_point:      s.sponsor_point      || { amount: 0, count: 0 },
+          rank_bonus:         s.rank_bonus         || { amount: 0, count: 0 },
         })
       })
       .finally(() => setLoading(false))
@@ -136,6 +142,7 @@ export default function AdminCommissionsPage() {
           { key: 'direct_referral', label: 'Direct Referral', icon: '🤝', color: '#C9A84C' },
           { key: 'binary_pairing',  label: 'Binary Pairing',  icon: '🌳', color: '#2563eb' },
           { key: 'sponsor_point',   label: 'Product Binary',  icon: '📦', color: '#1a7a4a' },
+          { key: 'rank_bonus', label: 'Rank Advancement Bonus', icon: '🏅', color: '#9a6f1e' },
         ].map(t => {
           const data = summary[t.key as keyof typeof summary] as { amount: number; count: number }
           return (
@@ -179,6 +186,7 @@ export default function AdminCommissionsPage() {
               { key: 'direct_referral', label: '🤝 Direct'     },
               { key: 'binary_pairing',  label: '🌳 Binary'     },
               { key: 'sponsor_point',   label: '📦 Product Binary' },
+              { key: 'rank_bonus', label: '🏅 Rank Advancement Bonus' },
             ].map(f => (
               <button key={f.key} onClick={() => setTypeFilter(f.key)}
                 className={`text-xs px-3 py-1.5 rounded-lg transition-colors whitespace-nowrap ${typeFilter === f.key ? 'bg-[#010521] text-white' : 'bg-[#f8f9fc] text-gray-400 hover:text-[#0D1B3E]'}`}>

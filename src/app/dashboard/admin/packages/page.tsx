@@ -2,7 +2,6 @@
 
 import { useState, useEffect } from 'react'
 import Pagination, { PaginationMeta } from '@/app/components/ui/Pagination'
-import { getProductBinaryDailyCap } from '@/app/lib/productBinaryPlan'
 
 // ============================================================
 // TYPES
@@ -335,14 +334,8 @@ export default function PackagesPage() {
                   {[
                     { label: 'Direct referral bonus',       value: `₱${Number(pkg.direct_referral_bonus).toLocaleString()}` },
                     { label: 'Binary Points',               value: `${Number(pkg.pairing_bonus_value).toLocaleString()} pts` },
-                    { label: 'Product Binary Point Value',  value: `${Number(pkg.point_php_value).toLocaleString()} pts` },
+                    { label: 'Legacy Product Binary Points',  value: `${Number(pkg.point_php_value).toLocaleString()} pts` },
                     { label: 'Point reset period',          value: `Every ${pkg.point_reset_days} days` },
-                    {
-                      label: 'Product Binary Daily Cap',
-                      value: pkg.product_binary_cap_enabled !== false
-                        ? `${pkg.daily_product_pairing_cap || 50} pairs/day`
-                        : 'Unlimited (Off)',
-                    },
                     {
                       label: 'Direct Referral Daily Cap',
                       value: pkg.direct_referral_cap_enabled
@@ -461,8 +454,8 @@ export default function PackagesPage() {
                       className="w-28 bg-white border border-[#0D1B3E]/15 rounded-lg px-3 py-2 text-sm outline-none focus:border-[#C9A84C]" />,
                   },
                   {
-                    label: 'Product Binary Base',
-                    hint: 'Universal rule: 10 points × ₱0.50 = ₱5 per pair',
+                    label: 'Legacy Product Binary Points',
+                    hint: 'For per-order settlement. Weekly payout rates follow the funded pool and configured maximum.',
                     required: true,
                     input: <input type="number" value="10" readOnly aria-label="Product Binary base points"
                       className="w-28 bg-gray-50 border border-[#0D1B3E]/10 rounded-lg px-3 py-2 text-sm text-gray-500" />,
@@ -514,34 +507,6 @@ export default function PackagesPage() {
                     hint: 'Manage cap mode, limits and effective date in Admin Settings with Security PIN.',
                     required: false,
                     input: <a href="/dashboard/admin/settings" className="text-sm font-semibold underline">Open cap policy settings</a>,
-                  },
-                  {
-                    label: 'Product Binary Daily Cap',
-                    hint: 'Fixed plan: Starter 20, Silver 40, Gold 100 payable pairs per day',
-                    required: false,
-                    input: (
-                      <div className="flex shrink-0 items-center gap-2.5">
-                        <button
-                          type="button"
-                          disabled
-                          className="inline-flex h-9 w-[74px] shrink-0 items-center justify-center gap-1.5 rounded-lg border border-[#16814d] bg-[#e8f7ef] text-[11px] font-bold tracking-wide text-[#126b41]"
-                          aria-pressed="true"
-                        >
-                          <span className={`h-2 w-2 rounded-full ${
-                            'bg-[#16814d]'
-                          }`} />
-                          ON
-                        </button>
-                        <input
-                          type="number"
-                          min="1"
-                          disabled
-                          value={getProductBinaryDailyCap(form.name || 'Starter')}
-                          aria-label="Product binary daily limit"
-                          className="h-9 w-[72px] shrink-0 rounded-lg border border-[#0D1B3E]/15 bg-white px-3 text-sm outline-none focus:border-[#C9A84C] disabled:cursor-not-allowed disabled:bg-gray-100 disabled:text-gray-400"
-                        />
-                      </div>
-                    ),
                   },
                 ].map((row) => (
                   <div key={row.label} className="flex items-center justify-between gap-3 bg-white rounded-lg px-3 py-2">

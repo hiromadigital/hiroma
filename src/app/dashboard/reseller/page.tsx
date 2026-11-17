@@ -245,7 +245,6 @@ export default function ResellerDashboardPage() {
   const totalPU        = stats.rank?.total_pu || 0
   const currentRankObj = ranks.find(r => r.name === stats.rank?.current) || null
   const nextRank       = currentRankObj ? ranks[ranks.indexOf(currentRankObj) + 1] || null : ranks[0] || null
-  const effectivePts   = 10
   const progressPct    = !nextRank ? 100
     : currentRankObj
     ? Math.min(100, Math.round(((totalPU - currentRankObj.required_pu) / (nextRank.required_pu - currentRankObj.required_pu)) * 100))
@@ -662,10 +661,9 @@ export default function ResellerDashboardPage() {
             </div>
           </div>
 
-          <div className="relative z-[1] mt-5 grid grid-cols-3 gap-2">
+          <div className="relative z-[1] mt-5 grid grid-cols-2 gap-2">
             <div className={styles.rankMetric}><span>Personal PU</span><strong>{totalPU}</strong></div>
             <div className={styles.rankMetric}><span>Days Left</span><strong>{quarterDaysLeft ?? '—'}</strong></div>
-            <div className={styles.rankMetric}><span>Pair Rate</span><strong>₱{(effectivePts * 0.5).toFixed(0)}</strong></div>
           </div>
 
           <div className="relative z-[1] mt-4">

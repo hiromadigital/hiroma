@@ -1,7 +1,6 @@
 'use client'
 
 import { useState, useEffect } from 'react'
-import { getProductBinaryDailyCap } from '@/app/lib/productBinaryPlan'
 
 // ============================================================
 // TYPES
@@ -143,12 +142,11 @@ export default function TierSettingsPage() {
       {/* Info Banner */}
       <div className="bg-[#fef9ee] border border-[#C9A84C]/30 rounded-xl p-4 mb-6">
         <p className="text-xs font-medium text-[#9a6f1e] mb-1">How tier settings work</p>
-        <div className="grid grid-cols-2 md:grid-cols-4 gap-3 mt-2">
+        <div className="grid grid-cols-2 md:grid-cols-3 gap-3 mt-2">
           {[
             { label: 'Direct referral bonus',      desc: 'PHP earned when a reseller refers someone new using their link' },
             { label: 'Binary pairing bonus',       desc: 'PHP earned when left & right legs form a matching pair' },
             { label: 'Point PHP value',            desc: 'How much 1 product pairing point is worth in PHP' },
-            { label: 'Daily product pairing cap',  desc: 'Max product binary pairs per day before overflow to Hiroma' },
           ].map((item) => (
             <div key={item.label} className="bg-white rounded-lg p-3 border border-[#C9A84C]/20">
               <p className="text-xs font-medium text-[#0D1B3E] mb-1">{item.label}</p>
@@ -278,7 +276,7 @@ export default function TierSettingsPage() {
 
               {/* Values Grid */}
               <div className="p-5">
-                <div className="grid grid-cols-2 md:grid-cols-5 gap-4">
+                <div className="grid grid-cols-2 md:grid-cols-4 gap-4">
 
                   {/* Direct referral bonus */}
                   <div className="bg-[#F0F2F8] rounded-lg p-4">
@@ -316,7 +314,7 @@ export default function TierSettingsPage() {
                   <div className="bg-[#F0F2F8] rounded-lg p-4">
                     <p className="text-xs text-gray-400 mb-2">Product point value</p>
                     <p className="text-xl font-semibold text-[#C9A84C]">10</p>
-                    <p className="text-xs text-gray-400 mt-1">points = ₱5 base/pair</p>
+                    <p className="text-xs text-gray-400 mt-1">legacy Product Binary points</p>
                   </div>
 
                   {/* Point reset days */}
@@ -324,22 +322,6 @@ export default function TierSettingsPage() {
                     <p className="text-xs text-gray-400 mb-2">Point reset period</p>
                     <p className="text-xl font-semibold text-[#0D1B3E]">Quarterly</p>
                     <p className="text-xs text-gray-400 mt-1">Q1 · Q2 · Q3 · Q4</p>
-                  </div>
-
-                  {/* Daily product pairing cap */}
-                  <div className="bg-[#F0F2F8] rounded-lg p-4">
-                    <p className="text-xs text-gray-400 mb-2">Daily product pair cap</p>
-                    {editing === pkg.id ? (
-                      <div className="flex items-center gap-1">
-                        <input type="number" value={getProductBinaryDailyCap(String(form.name || 'Starter'))}
-                          disabled
-                          className="flex-1 bg-white border border-[#C9A84C] rounded px-2 py-1 text-sm font-semibold text-[#0D1B3E] outline-none w-full" />
-                        <span className="text-xs text-gray-400">/day</span>
-                      </div>
-                    ) : (
-                      <p className="text-xl font-semibold text-[#0D1B3E]">{getProductBinaryDailyCap(pkg.name)}</p>
-                    )}
-                    <p className="text-xs text-gray-400 mt-1">pairs per day</p>
                   </div>
 
                 </div>

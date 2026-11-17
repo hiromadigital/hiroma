@@ -49,6 +49,7 @@ type PayoutRow = {
   direct_referral: number;
   binary: number;
   product_binary: number;
+  rank_bonus: number;
   unallocated: number;
   status: string;
   payment_method?: string | null;
@@ -204,6 +205,7 @@ export default function PayoutLedgerPage() {
             <option value="direct_referral">Direct Referral</option>
             <option value="binary">Binary Commission</option>
             <option value="product_binary">Product Binary</option>
+            <option value="rank_bonus">Rank Advancement Bonus</option>
           </select>
           <button
             onClick={() => { setPage(1); load(from, to, 1); }}
@@ -216,7 +218,7 @@ export default function PayoutLedgerPage() {
       <section className="mt-5 overflow-hidden rounded-2xl border bg-white shadow-sm">
         <div className="border-b p-5">
           <h2 className="font-bold">Payout Source Breakdown</h2>
-          <div className="mt-3 grid gap-2 text-sm sm:grid-cols-4">
+          <div className="mt-3 grid gap-2 text-sm sm:grid-cols-5">
             <p className="rounded-xl bg-emerald-50 p-3">
               Direct Referral
               <br />
@@ -233,6 +235,10 @@ export default function PayoutLedgerPage() {
               <b>{peso.format(s.product_binary || 0)}</b>
             </p>
             <p className="rounded-xl bg-amber-50 p-3">
+              Rank Advancement Bonus<br />
+              <b>{peso.format(s.rank_bonus || 0)}</b>
+            </p>
+            <p className="rounded-xl bg-slate-50 p-3">
               Unallocated / Other
               <br />
               <b>{peso.format(s.unallocated || 0)}</b>
@@ -251,6 +257,7 @@ export default function PayoutLedgerPage() {
                   "Direct",
                   "Binary",
                   "Product Binary",
+                  "Rank Bonus",
                   "Other",
                   "Status",
                   "Method / reference",
@@ -280,6 +287,7 @@ export default function PayoutLedgerPage() {
                   <td className="px-4">{peso.format(r.direct_referral)}</td>
                   <td className="px-4">{peso.format(r.binary)}</td>
                   <td className="px-4">{peso.format(r.product_binary)}</td>
+                  <td className="px-4">{peso.format(r.rank_bonus)}</td>
                   <td className="px-4">{peso.format(r.unallocated)}</td>
                   <td className="px-4">
                     <span

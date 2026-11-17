@@ -386,7 +386,7 @@ export default function ResellerTreePage() {
               { label: 'Total Right Product PU', value: `${productBinary.right_total_pu} PU`, sub: `${productBinary.rightPu} PU available carryover`, color: '#B86409', icon: '▶' },
               { label: 'Total Product Binary Earnings', value: fmt(productBinary.total_earned), sub: 'Your accumulated Product Binary income since joining', color: '#168052', icon: '💰' },
               { label: 'Lifetime Completed Pairs', value: productBinary.lifetime_pairs.toLocaleString(), sub: 'All Product Binary pairs completed since joining', color: '#16766F', icon: '🔗' },
-              { label: 'Personal PU', value: `${earnings.total_pu} PU`, sub: productBinary.rank_progress.next_rank ? `Current: ${fmt(productBinary.rank_progress.current_pair_rate_amount)}/pair · ${productBinary.rank_progress.next_rank.remaining_pu} PU more to ${rankLabel(productBinary.rank_progress.next_rank.name)}: ${fmt(productBinary.rank_progress.next_rank.pair_rate_amount)}/pair` : `Top rank reached · Current: ${fmt(productBinary.rank_progress.current_pair_rate_amount)}/pair`, color: '#A17820', icon: '🏅' },
+              { label: 'Personal PU', value: `${earnings.total_pu} PU`, sub: productBinary.rank_progress.next_rank ? `${productBinary.rank_progress.next_rank.remaining_pu} PU more to ${rankLabel(productBinary.rank_progress.next_rank.name)}` : "Top rank reached", color: '#A17820', icon: '🏅' },
             ].map((card) => (
               <div key={card.label} className="group relative min-h-32 overflow-hidden rounded-xl border p-4 text-white transition-all duration-300 hover:-translate-y-1 hover:shadow-xl" style={{ background: `linear-gradient(145deg, rgba(255,255,255,.18), rgba(0,0,0,.15)), ${card.color}`, borderColor: 'rgba(255,255,255,.3)', borderTop: '3px solid rgba(255,255,255,.62)', boxShadow: `0 10px 26px ${card.color}38` }}>
                 <span className="flex h-9 w-9 items-center justify-center rounded-xl border border-white/30 bg-white/20 text-lg">{card.icon}</span>
@@ -515,12 +515,11 @@ export default function ResellerTreePage() {
                         {productBinary.rank_progress.next_rank ? (
                           <>
                             <div className="flex justify-between gap-4"><span className="text-gray-400">Remaining to {productBinary.rank_progress.next_rank.name}</span><strong className="text-right text-[#0D1B3E]">{productBinary.rank_progress.next_rank.remaining_pu} PU</strong></div>
-                            <div className="flex justify-between gap-4"><span className="text-gray-400">Next Rank Pair Rate</span><strong className="text-right text-[#0D1B3E]">{fmt(productBinary.rank_progress.next_rank.pair_rate_amount)}/pair</strong></div>
                           </>
                         ) : (
                           <div className="flex justify-between gap-4"><span className="text-gray-400">Rank Progress</span><strong className="text-right text-[#168052]">Top rank reached</strong></div>
                         )}
-                        <div className="flex justify-between gap-4"><span className="text-gray-400">Current Pair Rate</span><strong className="text-right text-[#0D1B3E]">{fmt(productBinary.rank_progress.current_pair_rate_amount)}/pair</strong></div>
+                        <div className="flex justify-between gap-4"><span className="text-gray-400">Configured maximum per pair</span><strong className="text-right text-[#0D1B3E]">{fmt(productBinary.rank_progress.current_pair_rate_amount)}/pair</strong></div>
                         <div className="flex justify-between"><span className="text-gray-400">Lifetime Completed Pairs</span><strong className="text-[#0D1B3E]">{productBinary.lifetime_pairs}</strong></div>
                         <div className="flex justify-between gap-4 border-t pt-2"><span className="text-gray-400">Total Product Binary Earnings</span><strong className="text-right text-[#168052]">{fmt(productBinary.total_earned)}</strong></div>
                         <p className="text-[10px] leading-4 text-gray-500">Your accumulated Product Binary income since joining.</p>
@@ -680,6 +679,6 @@ interface ProductBinarySummary {
   rank_progress: {
     current_rank: string
     current_pair_rate_amount: number
-    next_rank: { name: string; required_pu: number; remaining_pu: number; pair_rate_amount: number } | null
+    next_rank: { name: string; required_pu: number; remaining_pu: number } | null
   }
 }

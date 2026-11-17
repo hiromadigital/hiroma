@@ -62,6 +62,10 @@ const protectedTables = [
   "product_binary_pool_allocations",
   "product_binary_account_holds",
   "product_binary_week_preparation",
+  "rank_bonus_programs",
+  "rank_bonus_funding",
+  "rank_bonus_awards",
+  "rank_bonus_payout_consumptions",
   "product_binary_prepared_recipients",
   "orders",
   "order_items",
@@ -105,6 +109,7 @@ const protectedFinancialFunctions = [
   "public.allocate_approved_direct_referral_payout()",
   "public.allocate_approved_binary_payout()",
   "public.allocate_approved_product_binary_payout()",
+  "public.allocate_rank_bonus_payout()",
   "public.fund_product_binary_commission()",
   "public.qualify_product_binary_order_trigger()",
   "public.maintain_binary_tree_ancestor_counts()",
@@ -313,6 +318,31 @@ async function main() {
     if (unsafeWeeklyAccess.length) {
       throw new Error(
         `Weekly Product Binary requires read-only pool tables and executable guarded entry points: ${quoteSummary(unsafeWeeklyAccess.map(row => row.name))}.`,
+      );
+    }
+
+    const rankBonusAccess = await client.query<{ name: string; safe: boolean }>(`
+      SELECT name, has_table_privilege(current_user, name, 'SELECT')
+        AND NOT has_any_column_privilege(current_user, name, 'INSERT,UPDATE')
+        AND NOT has_table_privilege(current_user, name, 'DELETE') AS safe
+      FROM unnest(ARRAY['public.rank_bonus_awards', 'public.rank_bonus_payout_consumptions']) AS tables(name)
+      UNION ALL
+      SELECT name, has_table_privilege(current_user, name, 'SELECT')
+        AND has_table_privilege(current_user, name, 'INSERT')
+        AND NOT has_any_column_privilege(current_user, name, 'UPDATE')
+        AND NOT has_table_privilege(current_user, name, 'DELETE')
+      FROM unnest(ARRAY['public.rank_bonus_programs', 'public.rank_bonus_funding']) AS tables(name)
+      UNION ALL
+      SELECT name, has_function_privilege(current_user, name, 'EXECUTE')
+      FROM unnest(ARRAY[
+        'public.process_rank_bonus_awards(timestamptz,integer)',
+        'public.rank_bonus_progress(text,timestamptz,timestamptz)'
+      ]) AS functions(name)
+    `);
+    const unsafeRankBonusAccess = rankBonusAccess.rows.filter(row => !row.safe);
+    if (unsafeRankBonusAccess.length) {
+      throw new Error(
+        `Rank Advancement funding or award permissions are unsafe: ${quoteSummary(unsafeRankBonusAccess.map(row => row.name))}.`,
       );
     }
 

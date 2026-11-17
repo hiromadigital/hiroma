@@ -160,6 +160,7 @@ export async function GET(req: NextRequest) {
       binary_pairing:  { amount: 0, count: 0 },
       multilevel:      { amount: 0, count: 0 },
       sponsor_point:   { amount: 0, count: 0 },
+      rank_bonus:      { amount: 0, count: 0 },
     }
     for (const row of commissionSummary) {
       summary[row.type as keyof typeof summary] = {
