@@ -66,6 +66,14 @@ const protectedTables = [
   "rank_bonus_funding",
   "rank_bonus_awards",
   "rank_bonus_payout_consumptions",
+  "unilevel_inventory_earmarks",
+  "unilevel_order_allocations",
+  "unilevel_qualified_orders",
+  "unilevel_qualified_recipients",
+  "unilevel_order_settlements",
+  "unilevel_payable_lots",
+  "unilevel_retention_entries",
+  "unilevel_payout_consumptions",
   "product_binary_prepared_recipients",
   "orders",
   "order_items",
@@ -87,6 +95,24 @@ const protectedTables = [
 ] as const;
 
 const protectedFinancialFunctions = [
+  "public.configure_financial_runtime_role(text)",
+  "public.capture_unilevel_qualification()",
+  "public.snapshot_unilevel_order_allocations()",
+  "public.earmark_unilevel_stock()",
+  "public.settle_unilevel_order()",
+  "public.allocate_unilevel_payout()",
+  "public.create_binary_reserve_lot_for_registration()",
+  "public.create_binary_reserve_lot_for_upgrade()",
+  "public.consume_binary_reserve()",
+  "public.create_binary_payable_lot()",
+  "public.create_direct_referral_reserve_lot()",
+  "public.create_product_binary_payable_lot()",
+  "public.validate_product_binary_pair_event_entitlement()",
+  "public.validate_exact_commission_entitlement()",
+  "public.validate_binary_pair_event_entitlement()",
+  "public.validate_binary_settlement_source_entitlement()",
+  "public.validate_direct_referral_settlement_insert()",
+  "public.enforce_payout_identity_and_status_transition()",
   "public.track_product_binary_account_hold()",
   "public.apply_product_binary_expired_window(date,text)",
   "public.require_fully_funded_product_binary_pool_order()",
@@ -344,6 +370,16 @@ async function main() {
       throw new Error(
         `Rank Advancement funding or award permissions are unsafe: ${quoteSummary(unsafeRankBonusAccess.map(row => row.name))}.`,
       );
+    }
+
+    const unilevelAccess = await client.query<{ name: string; safe: boolean }>(`
+      SELECT name, has_table_privilege(current_user,name,'SELECT')
+        AND NOT has_any_column_privilege(current_user,name,'INSERT,UPDATE')
+        AND NOT has_table_privilege(current_user,name,'DELETE') AS safe
+      FROM unnest($1::text[]) AS tables(name)
+    `, [protectedTables.filter(table => table.startsWith("unilevel_")).map(table => `public.${table}`)]);
+    if (unilevelAccess.rows.some(row => !row.safe)) {
+      throw new Error("Unilevel financial records must be read-only to the application runtime.");
     }
 
     const unsafeObjects = objects.rows.filter(

@@ -14,6 +14,7 @@
     "verify:binary-accounting": "tsx scripts/verify-binary-accounting.ts",
     "verify:binary-reserve-admission": "tsx scripts/verify-binary-reserve-admission.ts",
     "verify:financial-runtime-role": "tsx scripts/verify-financial-runtime-role.ts",
+    "configure:financial-runtime-role": "tsx scripts/configure-financial-runtime-role.ts",
     "verify:production-database-target": "tsx scripts/verify-production-database-target.ts",
     "write:financial-release-attestation": "tsx scripts/write-financial-release-attestation.ts"
   },

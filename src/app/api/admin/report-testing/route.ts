@@ -216,7 +216,10 @@ export async function GET(req: NextRequest) {
     const commissions = resellerIds.length
       ? await prisma.commission.groupBy({
           by: ['source_user_id', 'type'],
-          where: { source_user_id: { in: resellerIds }, type: { in: [...commissionTypes] }, is_pair_overflow: false, created_at: period },
+          where: {
+            source_user_id: { in: resellerIds }, type: { in: [...commissionTypes] }, is_pair_overflow: false, created_at: period,
+            OR: [{ source_event_kind: null }, { source_event_kind: { not: 'unilevel_order' } }],
+          },
           _sum: { amount: true },
         })
       : []

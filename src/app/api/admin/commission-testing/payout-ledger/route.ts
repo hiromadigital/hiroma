@@ -6,12 +6,12 @@ const n=(v:unknown)=>Number(v||0)||0
 type PayoutLedgerRow = {
  id:string; transaction_number:string; amount:number; status:string; payment_method:string|null; payment_reference:string|null;
  requested_at:Date; processed_at:Date|null; released_at:Date|null; payout_date:Date|null; notes:string|null;
- full_name:string; username:string; direct_referral:number; binary:number; product_binary:number; rank_bonus:number;
+ full_name:string; username:string; direct_referral:number; binary:number; product_binary:number; rank_bonus:number; unilevel:number;
  [key:string]: string | number | Date | null;
 }
 type PayoutLedgerSummary = {
  total_requested:number; pending:number; approved:number; released:number; rejected:number; payout_count:number;
- direct_referral:number; binary:number; product_binary:number; rank_bonus:number; unallocated:number;
+ direct_referral:number; binary:number; product_binary:number; rank_bonus:number; unilevel:number; unallocated:number;
 }
 export async function GET(req:NextRequest){
  const user=await getCurrentUser();if(!user||user.role!=='admin')return NextResponse.json({error:'Unauthorized'},{status:401})
@@ -33,7 +33,8 @@ export async function GET(req:NextRequest){
       COALESCE((SELECT SUM(amount) FROM direct_referral_payout_consumptions WHERE payout_id=p.id),0)::float direct_referral,
       COALESCE((SELECT SUM(amount) FROM binary_payout_consumptions WHERE payout_id=p.id),0)::float binary_amount,
       COALESCE((SELECT SUM(amount) FROM product_binary_payout_consumptions WHERE payout_id=p.id),0)::float product_binary,
-      COALESCE((SELECT SUM(amount) FROM rank_bonus_payout_consumptions WHERE payout_id=p.id),0)::float rank_bonus
+      COALESCE((SELECT SUM(amount) FROM rank_bonus_payout_consumptions WHERE payout_id=p.id),0)::float rank_bonus,
+      COALESCE((SELECT SUM(amount) FROM unilevel_payout_consumptions WHERE payout_id=p.id),0)::float unilevel
      FROM payouts p JOIN users u ON u.id=p.user_id CROSS JOIN params filters
      WHERE (CASE WHEN p.status='released' THEN COALESCE(p.released_at,p.payout_date,p.processed_at,p.requested_at)
        WHEN p.status IN ('approved','rejected') THEN COALESCE(p.processed_at,p.requested_at) ELSE p.requested_at END) BETWEEN ${from} AND ${to}
@@ -42,7 +43,8 @@ export async function GET(req:NextRequest){
        OR (filters.source_filter='direct_referral' AND EXISTS(SELECT 1 FROM direct_referral_payout_consumptions WHERE payout_id=p.id))
        OR (filters.source_filter='binary' AND EXISTS(SELECT 1 FROM binary_payout_consumptions WHERE payout_id=p.id))
        OR (filters.source_filter='product_binary' AND EXISTS(SELECT 1 FROM product_binary_payout_consumptions WHERE payout_id=p.id))
-       OR (filters.source_filter='rank_bonus' AND EXISTS(SELECT 1 FROM rank_bonus_payout_consumptions WHERE payout_id=p.id)))
+       OR (filters.source_filter='rank_bonus' AND EXISTS(SELECT 1 FROM rank_bonus_payout_consumptions WHERE payout_id=p.id))
+       OR (filters.source_filter='unilevel' AND EXISTS(SELECT 1 FROM unilevel_payout_consumptions WHERE payout_id=p.id)))
       AND (filters.search_filter='' OR LOWER(CONCAT_WS(' ',p.transaction_number,u.full_name,u.username,p.payment_reference)) LIKE '%'||filters.search_filter||'%')
     ) SELECT COALESCE(SUM(amount),0)::float total_requested,
       COALESCE(SUM(amount) FILTER(WHERE status='pending'),0)::float pending,
@@ -51,8 +53,8 @@ export async function GET(req:NextRequest){
       COALESCE(SUM(amount) FILTER(WHERE status='rejected'),0)::float rejected,
       COUNT(*)::int payout_count,COALESCE(SUM(direct_referral),0)::float direct_referral,
       COALESCE(SUM(binary_amount),0)::float AS "binary",COALESCE(SUM(product_binary),0)::float product_binary,
-      COALESCE(SUM(rank_bonus),0)::float rank_bonus,
-      COALESCE(SUM(GREATEST(amount-direct_referral-binary_amount-product_binary-rank_bonus,0)),0)::float unallocated
+      COALESCE(SUM(rank_bonus),0)::float rank_bonus,COALESCE(SUM(unilevel),0)::float unilevel,
+      COALESCE(SUM(GREATEST(amount-direct_referral-binary_amount-product_binary-rank_bonus-unilevel,0)),0)::float unallocated
     FROM filtered
    `,
    prisma.$queryRaw<PayoutLedgerRow[]>`
@@ -63,7 +65,8 @@ export async function GET(req:NextRequest){
      COALESCE((SELECT SUM(amount) FROM direct_referral_payout_consumptions WHERE payout_id=p.id),0)::float direct_referral,
      COALESCE((SELECT SUM(amount) FROM binary_payout_consumptions WHERE payout_id=p.id),0)::float AS "binary",
      COALESCE((SELECT SUM(amount) FROM product_binary_payout_consumptions WHERE payout_id=p.id),0)::float product_binary,
-      COALESCE((SELECT SUM(amount) FROM rank_bonus_payout_consumptions WHERE payout_id=p.id),0)::float rank_bonus
+      COALESCE((SELECT SUM(amount) FROM rank_bonus_payout_consumptions WHERE payout_id=p.id),0)::float rank_bonus,
+      COALESCE((SELECT SUM(amount) FROM unilevel_payout_consumptions WHERE payout_id=p.id),0)::float unilevel
     FROM payouts p JOIN users u ON u.id=p.user_id CROSS JOIN params filters
     WHERE (CASE WHEN p.status='released' THEN COALESCE(p.released_at,p.payout_date,p.processed_at,p.requested_at)
       WHEN p.status IN ('approved','rejected') THEN COALESCE(p.processed_at,p.requested_at) ELSE p.requested_at END) BETWEEN ${from} AND ${to}
@@ -72,7 +75,8 @@ export async function GET(req:NextRequest){
       OR (filters.source_filter='direct_referral' AND EXISTS(SELECT 1 FROM direct_referral_payout_consumptions WHERE payout_id=p.id))
       OR (filters.source_filter='binary' AND EXISTS(SELECT 1 FROM binary_payout_consumptions WHERE payout_id=p.id))
       OR (filters.source_filter='product_binary' AND EXISTS(SELECT 1 FROM product_binary_payout_consumptions WHERE payout_id=p.id))
-       OR (filters.source_filter='rank_bonus' AND EXISTS(SELECT 1 FROM rank_bonus_payout_consumptions WHERE payout_id=p.id)))
+       OR (filters.source_filter='rank_bonus' AND EXISTS(SELECT 1 FROM rank_bonus_payout_consumptions WHERE payout_id=p.id))
+       OR (filters.source_filter='unilevel' AND EXISTS(SELECT 1 FROM unilevel_payout_consumptions WHERE payout_id=p.id)))
      AND (filters.search_filter='' OR LOWER(CONCAT_WS(' ',p.transaction_number,u.full_name,u.username,p.payment_reference)) LIKE '%'||filters.search_filter||'%')
     ORDER BY COALESCE(p.released_at,p.payout_date,p.processed_at,p.requested_at) DESC
     LIMIT ${pageSize} OFFSET ${offset}
@@ -87,7 +91,7 @@ export async function GET(req:NextRequest){
    ledger=await queryLedger()
   }
   const {summaryRows,rows}=ledger
-  const payouts=rows.map(r=>({...r,unallocated:Math.max(0,n(r.amount)-n(r.direct_referral)-n(r.binary)-n(r.product_binary)-n(r.rank_bonus)),event_at:r.status==='released'?(r.released_at||r.payout_date||r.processed_at||r.requested_at):((r.status==='approved'||r.status==='rejected')?(r.processed_at||r.requested_at):r.requested_at)}))
+  const payouts=rows.map(r=>({...r,unallocated:Math.max(0,n(r.amount)-n(r.direct_referral)-n(r.binary)-n(r.product_binary)-n(r.rank_bonus)-n(r.unilevel)),event_at:r.status==='released'?(r.released_at||r.payout_date||r.processed_at||r.requested_at):((r.status==='approved'||r.status==='rejected')?(r.processed_at||r.requested_at):r.requested_at)}))
   const totalCount=n(summaryRows[0]?.payout_count)
   return NextResponse.json({
    summary:summaryRows[0],payouts,

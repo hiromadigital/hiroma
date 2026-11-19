@@ -51,7 +51,7 @@ interface Payout {
 }
 
 const PAGE_SIZE = 10
-type CommissionFilter = 'all' | 'direct_referral' | 'binary_pairing' | 'sponsor_point' | 'rank_bonus'
+type CommissionFilter = 'all' | 'direct_referral' | 'binary_pairing' | 'sponsor_point' | 'rank_bonus' | 'multilevel'
 
 const COMMISSION_ICONS: Record<string, string> = {
   direct_referral: '👥',
@@ -64,7 +64,7 @@ const COMMISSION_ICONS: Record<string, string> = {
 const COMMISSION_LABELS: Record<string, string> = {
   direct_referral: 'Direct Referral',
   binary_pairing:  'Binary Pairing',
-  multilevel:      'Multi-level',
+  multilevel:      'Unilevel',
   sponsor_point:   'Product Binary',
   rank_bonus:      'Rank Advancement Bonus',
 }
@@ -407,7 +407,7 @@ export default function ResellerWalletPage() {
             {selectedDateLabel && <p className="text-xs font-medium text-[#9a6f1e]">{selectedDateLabel}</p>}
           </div>
           <div className="grid grid-cols-2 md:grid-cols-4 gap-3">
-            {Object.entries(commissionSummary).filter(([type]) => type !== 'multilevel').map(([type, data]) => (
+            {Object.entries(commissionSummary).map(([type, data]) => (
               <button key={type} type="button" onClick={() => selectCommissionFilter(type as CommissionFilter)}
                 aria-pressed={commissionFilter === type}
                 className={`commissionSummaryCard group relative overflow-hidden rounded-xl border p-4 text-left transition-all duration-300 hover:-translate-y-1 hover:shadow-xl focus:outline-none focus:ring-2 focus:ring-white/60 ${commissionFilter === type ? 'ring-2 ring-white/80' : ''}`}

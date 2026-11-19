@@ -40,7 +40,14 @@ const navItems = [
     section: 'Catalog',
     items: [
       { label: 'Products', href: '/dashboard/admin/products', icon: '🧴' },
-      { label: 'Bonuses', href: '/dashboard/admin/bonuses', icon: '📊' },
+      {
+        label: 'Bonuses',
+        icon: '📊',
+        children: [
+          { label: 'Product Binary', href: '/dashboard/admin/bonuses' },
+          { label: 'Unilevel', href: '/dashboard/admin/bonuses/unilevel' },
+        ],
+      },
       { label: 'Ranks', href: '/dashboard/admin/ranks', icon: '🏅' },
       { label: 'Packages', href: '/dashboard/admin/packages', icon: '📦' },
       { label: 'PIN Manager', href: '/dashboard/admin/pins', icon: '🔑' },
@@ -167,15 +174,13 @@ function Sidebar({
   onClose: () => void
   onLogout: () => void
 }) {
-  const [commissionTestingOpen, setCommissionTestingOpen] = useState(() =>
-    pathname.startsWith('/dashboard/admin/commission-testing'),
-  )
+  const [expandedGroups, setExpandedGroups] = useState<Partial<Record<string, boolean>>>({})
 
   const isActive = (href: string) => {
-    if (href === '/dashboard/admin') return pathname === href
-    // Exact match for these to avoid parent highlighting child routes
-    if (href === '/dashboard/admin/resellers') return pathname === href
-    return pathname.startsWith(href)
+    if (href === '/dashboard/admin' || href === '/dashboard/admin/resellers' || href === '/dashboard/admin/bonuses') {
+      return pathname === href
+    }
+    return pathname === href || pathname.startsWith(href + '/')
   }
 
   const visibleNavItems = navItems
@@ -232,47 +237,55 @@ function Sidebar({
             <p className="text-white/30 text-xs font-medium tracking-widest uppercase px-2 py-1">
               {group.section}
             </p>
-            {group.items.map((item) =>
-              'children' in item ? (
-                <div key={item.label} className="mb-0.5">
-                  <button
-                    type="button"
-                    onClick={() => setCommissionTestingOpen((open) => !open)}
-                    aria-expanded={commissionTestingOpen}
-                    className={`flex w-full items-center gap-2.5 rounded-lg px-3 py-2 text-left text-sm transition-all duration-150 ${
-                      item.children.some((child) => isActive(child.href))
-                        ? 'bg-[#C9A84C]/15 text-[#C9A84C]'
-                        : 'text-white/50 hover:bg-white/5 hover:text-white'
-                    }`}
-                  >
-                    <span className="text-base">{item.icon}</span>
-                    <span className="flex-1">{item.label}</span>
-                    <span
-                      className={`text-xs transition-transform ${commissionTestingOpen ? 'rotate-180' : ''}`}
+            {group.items.map((item) => {
+              if ('children' in item) {
+                const active = item.children.some((child) => isActive(child.href))
+                const expanded = expandedGroups[item.label] ?? active
+
+                return (
+                  <div key={item.label} className="mb-0.5">
+                    <button
+                      type="button"
+                      onClick={() => setExpandedGroups((groups) => ({ ...groups, [item.label]: !expanded }))}
+                      aria-expanded={expanded}
+                      className={`flex w-full items-center gap-2.5 rounded-lg px-3 py-2 text-left text-sm transition-all duration-150 ${
+                        active
+                          ? 'bg-[#C9A84C]/15 text-[#C9A84C]'
+                          : 'text-white/50 hover:bg-white/5 hover:text-white'
+                      }`}
                     >
-                      ⌄
-                    </span>
-                  </button>
-                  {commissionTestingOpen && (
-                    <div className="ml-5 mt-1 border-l border-white/20 pl-2">
-                      {item.children.map((child) => (
-                        <Link
-                          key={child.href}
-                          href={child.href}
-                          onClick={onClose}
-                          className={`mb-0.5 flex rounded-md px-3 py-1.5 text-xs transition-colors ${
-                            isActive(child.href)
-                              ? 'bg-[#C9A84C]/15 text-[#C9A84C]'
-                              : 'text-white/50 hover:bg-white/5 hover:text-white'
-                          }`}
-                        >
-                          {child.label}
-                        </Link>
-                      ))}
-                    </div>
-                  )}
-                </div>
-              ) : (
+                      <span className="text-base">{item.icon}</span>
+                      <span className="flex-1">{item.label}</span>
+                      <span
+                        className={`text-xs transition-transform ${expanded ? 'rotate-180' : ''}`}
+                      >
+                        ⌄
+                      </span>
+                    </button>
+                    {expanded && (
+                      <div className="ml-5 mt-1 border-l border-white/20 pl-2">
+                        {item.children.map((child) => (
+                          <Link
+                            key={child.href}
+                            href={child.href}
+                            onClick={onClose}
+                            aria-current={isActive(child.href) ? "page" : undefined}
+                            className={`mb-0.5 flex rounded-md px-3 py-1.5 text-xs transition-colors ${
+                              isActive(child.href)
+                                ? 'bg-[#C9A84C]/15 text-[#C9A84C]'
+                                : 'text-white/50 hover:bg-white/5 hover:text-white'
+                            }`}
+                          >
+                            {child.label}
+                          </Link>
+                        ))}
+                      </div>
+                    )}
+                  </div>
+                )
+              }
+
+              return (
                 <Link
                   key={item.href}
                   href={item.href}
@@ -295,8 +308,8 @@ function Sidebar({
                       </span>
                     )}
                 </Link>
-              ),
-            )}
+              )
+            })}
           </div>
         ))}
       </nav>

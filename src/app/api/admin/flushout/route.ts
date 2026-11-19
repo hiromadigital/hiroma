@@ -217,7 +217,22 @@ export async function GET(req: NextRequest) {
           COALESCE(NULLIF(${dateTo}, '')::date, (CURRENT_TIMESTAMP AT TIME ZONE 'Asia/Manila')::date)
     ` : []
 
+    const [unilevelSchema] = await prisma.$queryRaw<{ ready: boolean }[]>`
+      SELECT to_regclass('public.unilevel_retention_entries') IS NOT NULL AS ready
+    `
+    const unilevelRetention = unilevelSchema.ready && !user.is_staff ? await prisma.$queryRaw<{
+      reason: string; amount: string; entries: number
+    }[]>`
+      SELECT reason, SUM(amount)::text AS amount, COUNT(*)::integer AS entries
+      FROM public.unilevel_retention_entries
+      WHERE created_at >= (${dateFrom || '2020-01-01'}::date::timestamp AT TIME ZONE 'Asia/Manila')
+        AND created_at < ((COALESCE(NULLIF(${dateTo}, '')::date,
+          (CURRENT_TIMESTAMP AT TIME ZONE 'Asia/Manila')::date)+1)::timestamp AT TIME ZONE 'Asia/Manila')
+      GROUP BY reason ORDER BY reason
+    ` : null
+
     return NextResponse.json({
+      unilevel_retention: unilevelRetention,
       product_binary_non_member_retained: nonMemberRetained ?? null,
       product_binary_retained_pools: retainedPools,
       records: formattedRecords,

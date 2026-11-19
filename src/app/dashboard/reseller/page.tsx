@@ -38,6 +38,7 @@ interface Stats {
     direct_referral: { amount: number; count: number }
     binary_pairing:  { amount: number; count: number }
     sponsor_point:   { amount: number; count: number }
+    multilevel:      { amount: number; count: number }
   }
   recent_commissions: {
     type: string; amount: number; points: number | null
@@ -58,16 +59,19 @@ const COMM_LABELS: Record<string, string> = {
   direct_referral: 'Direct Referral',
   binary_pairing:  'Binary Pairing',
   sponsor_point:   'Product Binary',
+  multilevel:      'Unilevel',
 }
 const COMM_COLORS: Record<string, string> = {
   direct_referral: '#3b82f6',
   binary_pairing:  '#8b5cf6',
   sponsor_point:   '#f59e0b',
+  multilevel:      '#2563eb',
 }
 const COMM_ICONS: Record<string, string> = {
   direct_referral: '👥',
   binary_pairing:  '🔗',
   sponsor_point:   '⭐',
+  multilevel:      '🏆',
 }
 
 // ── Donut Chart ──
@@ -238,6 +242,7 @@ export default function ResellerDashboardPage() {
   const totalEarned   = (stats.commission_summary?.direct_referral?.amount || 0)
     + (stats.commission_summary?.binary_pairing?.amount  || 0)
     + (stats.commission_summary?.sponsor_point?.amount   || 0)
+    + (stats.commission_summary?.multilevel?.amount      || 0)
 
 
   // Rank
@@ -264,6 +269,7 @@ export default function ResellerDashboardPage() {
     { label: 'Direct Referral', value: stats.commission_summary?.direct_referral?.amount || 0, color: COMM_COLORS.direct_referral },
     { label: 'Binary Pairing',  value: stats.commission_summary?.binary_pairing?.amount  || 0, color: COMM_COLORS.binary_pairing  },
     { label: 'Product Binary',   value: stats.commission_summary?.sponsor_point?.amount   || 0, color: COMM_COLORS.sponsor_point   },
+    { label: 'Unilevel', value: stats.commission_summary?.multilevel?.amount || 0, color: COMM_COLORS.multilevel },
   ].filter(d => d.value > 0)
 
   const firstName        = stats.user.full_name.split(' ')[0]
@@ -830,7 +836,7 @@ export default function ResellerDashboardPage() {
           <div className="flex items-center gap-6">
             <DonutChart data={donutData} />
             <div className="flex-1 space-y-2">
-              {Object.entries(stats.commission_summary || {}).filter(([type, data]) => type !== 'multilevel' && data.amount > 0).map(([type, data]) => {
+              {Object.entries(stats.commission_summary || {}).filter(([, data]) => data.amount > 0).map(([type, data]) => {
                 const pct = totalEarned > 0 ? Math.round((data.amount / totalEarned) * 100) : 0
                 return (
                   <div key={type}>

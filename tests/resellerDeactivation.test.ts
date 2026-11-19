@@ -43,9 +43,13 @@ test('unreconciled source-backed liabilities block deactivation before the event
   const reconciliation = route.indexOf('funded_liability')
   const event = route.indexOf('tx.resellerDeactivationEvent.create')
   assert.ok(reconciliation >= 0 && reconciliation < event)
-  assert.match(route, /direct_referral_reserve_lots/)
-  assert.match(route, /binary_payable_lots/)
-  assert.match(route, /product_binary_payable_lots/)
+  assert.match(route, /source_backed_liability::text AS funded_liability/)
+  assert.match(route, /FROM wallet_funding_reconciliation WHERE user_id=/)
+  const migration = readFileSync('prisma/migrations/20261118020000_settle_funded_unilevel/migration.sql', 'utf8')
+  const view = migration.slice(migration.indexOf('CREATE OR REPLACE VIEW "wallet_funding_reconciliation"'))
+  for (const source of ['direct_referral_reserve_lots', 'binary_payable_lots', 'product_binary_payable_lots', 'rank_bonus_awards', 'unilevel_payable_lots']) {
+    assert.ok(view.includes(source), source)
+  }
   assert.match(route, /Math\.abs\(walletBalance - fundedLiability\) >= 0\.005/)
   assert.equal(new UnreconciledWalletBlocksDeactivationError().message.includes('Reconcile'), true)
 })

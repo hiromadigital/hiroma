@@ -103,6 +103,7 @@ type RetainedPool = {
 const PAGE_SIZE = 15
 
 export default function AdminFlushoutPage() {
+  const [unilevelRetention, setUnilevelRetention] = useState<{ reason: string; amount: string; entries: number }[] | null>(null)
   const [nonMemberRetained, setNonMemberRetained] = useState<{ units: string; retained: string } | null>(null)
   const [retainedPools, setRetainedPools] = useState<RetainedPool[] | null>(null)
   const [records, setRecords]           = useState<FlushoutRecord[]>([])
@@ -132,6 +133,7 @@ export default function AdminFlushoutPage() {
       .then(r => r.json())
       .then(d => {
         setNonMemberRetained(d.product_binary_non_member_retained ?? null)
+        setUnilevelRetention(d.unilevel_retention ?? null)
         setRetainedPools(d.product_binary_retained_pools ?? null)
         setRecords(d.records || [])
         setSummary(d.summary || { total_pairs_today: 0, total_value_today: 0, affected_members: 0, avg_flushout: 0 })
@@ -395,6 +397,33 @@ export default function AdminFlushoutPage() {
           )}
         </div>
       </div>
+
+      {unilevelRetention !== null && (
+        <section className="rounded-xl border border-slate-200 bg-white p-5">
+          <h2 className="font-semibold text-[#0D1B3E]">Unilevel — Retained Order Commissions</h2>
+          <p className="mt-1 text-sm text-slate-600">Amounts retained during the selected Philippine dates, with the recorded reason for each share.</p>
+          <p className="mt-2 text-sm">Retained by Hiroma <strong>{fmt(unilevelRetention.reduce((total, row) => total + Number(row.amount), 0))}</strong></p>
+          {unilevelRetention.length > 0 && <details className="mt-3 text-sm">
+            <summary className="cursor-pointer font-medium">View retention reasons</summary>
+            <div className="mt-3 max-h-64 overflow-auto">
+              <table className="w-full text-left">
+                <thead><tr><th className="py-2">Reason</th><th>Entries</th><th>Amount</th></tr></thead>
+                <tbody>{unilevelRetention.map(row => <tr key={row.reason} className="border-t">
+                  <td className="py-2">{({
+                    no_sponsor: 'No sponsor at this level',
+                    inactive_account: 'Inactive account at qualification',
+                    monthly_purchase_required: 'Monthly purchase requirement not met',
+                    recipient_unavailable_at_credit: 'Account unavailable at credit time',
+                    rounding_or_excess_funding: 'Rounding or funding above the level allowance',
+                  } as Record<string, string>)[row.reason] || row.reason}</td>
+                  <td>{row.entries.toLocaleString('en-PH')}</td><td>{fmt(Number(row.amount))}</td>
+                </tr>)}</tbody>
+              </table>
+            </div>
+          </details>}
+          {unilevelRetention.length === 0 && <p className="mt-3 text-sm text-slate-500">No Unilevel retention recorded in this date range.</p>}
+        </section>
+      )}
 
       {nonMemberRetained && (
         <section className="rounded-xl border border-slate-200 bg-white p-4">
