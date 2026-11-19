@@ -41,10 +41,10 @@ const COMMISSION_META: Record<string, { label: string; color: string; bg: string
     desc:  'Earned when both your left and right affiliates match',
   },
   multilevel: {
-    label: 'Multi-level',
+    label: 'Unilevel',
     color: '#2563eb',
     bg:    '#f0f7ff',
-    desc:  'Earnings flowing upline from affiliate activity',
+    desc:  'Funded commissions from qualified repeat orders in your sponsor network',
   },
   sponsor_point: {
     label: 'Sponsor Point',

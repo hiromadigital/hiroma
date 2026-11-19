@@ -15,12 +15,12 @@ interface Commission {
 }
 
 // sponsor_point in DB = Product Binary in UI
-// multilevel is removed from display
 const TYPE_LABELS: Record<string, string> = {
   direct_referral: 'Direct Referral',
   binary_pairing:  'Binary Pairing',
   sponsor_point:   'Product Binary',
   rank_bonus:      'Rank Advancement Bonus',
+  multilevel:      'Unilevel',
 }
 
 const TYPE_COLORS: Record<string, string> = {
@@ -28,6 +28,7 @@ const TYPE_COLORS: Record<string, string> = {
   binary_pairing:  '#2563eb',
   sponsor_point:   '#1a7a4a',
   rank_bonus:      '#9a6f1e',
+  multilevel:      '#2563eb',
 }
 
 const TYPE_ICONS: Record<string, string> = {
@@ -35,6 +36,7 @@ const TYPE_ICONS: Record<string, string> = {
   binary_pairing:  '🌳',
   sponsor_point:   '📦',
   rank_bonus:      '🏅',
+  multilevel:      '🌐',
 }
 
 const fmt = (n: number) => `₱${Number(n).toLocaleString('en-PH', { minimumFractionDigits: 2, maximumFractionDigits: 2 })}`
@@ -63,6 +65,7 @@ export default function AdminCommissionsPage() {
     binary_pairing:     { amount: number; count: number }
     sponsor_point:      { amount: number; count: number }
     rank_bonus:         { amount: number; count: number }
+    multilevel:         { amount: number; count: number }
   }>({
     total_records:       0,
     total_amount:        0,
@@ -72,6 +75,7 @@ export default function AdminCommissionsPage() {
     binary_pairing:      { amount: 0, count: 0 },
     sponsor_point:       { amount: 0, count: 0 },
     rank_bonus:          { amount: 0, count: 0 },
+    multilevel:          { amount: 0, count: 0 },
   })
 
   useEffect(() => {
@@ -99,6 +103,7 @@ export default function AdminCommissionsPage() {
           binary_pairing:     s.binary_pairing     || { amount: 0, count: 0 },
           sponsor_point:      s.sponsor_point      || { amount: 0, count: 0 },
           rank_bonus:         s.rank_bonus         || { amount: 0, count: 0 },
+          multilevel:         s.multilevel         || { amount: 0, count: 0 },
         })
       })
       .finally(() => setLoading(false))
@@ -142,6 +147,7 @@ export default function AdminCommissionsPage() {
           { key: 'direct_referral', label: 'Direct Referral', icon: '🤝', color: '#C9A84C' },
           { key: 'binary_pairing',  label: 'Binary Pairing',  icon: '🌳', color: '#2563eb' },
           { key: 'sponsor_point',   label: 'Product Binary',  icon: '📦', color: '#1a7a4a' },
+          { key: 'multilevel',      label: 'Unilevel', icon: '🌐', color: '#2563eb' },
           { key: 'rank_bonus', label: 'Rank Advancement Bonus', icon: '🏅', color: '#9a6f1e' },
         ].map(t => {
           const data = summary[t.key as keyof typeof summary] as { amount: number; count: number }
@@ -180,12 +186,13 @@ export default function AdminCommissionsPage() {
               </button>
             )}
           </div>
-          <div className="flex gap-1">
+          <div className="flex flex-wrap gap-1">
             {[
               { key: 'all',            label: 'All'            },
               { key: 'direct_referral', label: '🤝 Direct'     },
               { key: 'binary_pairing',  label: '🌳 Binary'     },
               { key: 'sponsor_point',   label: '📦 Product Binary' },
+              { key: 'multilevel',      label: '🌐 Unilevel' },
               { key: 'rank_bonus', label: '🏅 Rank Advancement Bonus' },
             ].map(f => (
               <button key={f.key} onClick={() => setTypeFilter(f.key)}

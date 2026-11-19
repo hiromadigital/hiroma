@@ -50,6 +50,7 @@ type PayoutRow = {
   binary: number;
   product_binary: number;
   rank_bonus: number;
+  unilevel: number;
   unallocated: number;
   status: string;
   payment_method?: string | null;
@@ -206,6 +207,7 @@ export default function PayoutLedgerPage() {
             <option value="binary">Binary Commission</option>
             <option value="product_binary">Product Binary</option>
             <option value="rank_bonus">Rank Advancement Bonus</option>
+            <option value="unilevel">Unilevel</option>
           </select>
           <button
             onClick={() => { setPage(1); load(from, to, 1); }}
@@ -238,6 +240,9 @@ export default function PayoutLedgerPage() {
               Rank Advancement Bonus<br />
               <b>{peso.format(s.rank_bonus || 0)}</b>
             </p>
+            <p className="rounded-xl bg-blue-50 p-3">
+              Unilevel<br /><b>{peso.format(s.unilevel || 0)}</b>
+            </p>
             <p className="rounded-xl bg-slate-50 p-3">
               Unallocated / Other
               <br />
@@ -258,6 +263,7 @@ export default function PayoutLedgerPage() {
                   "Binary",
                   "Product Binary",
                   "Rank Bonus",
+                  "Unilevel",
                   "Other",
                   "Status",
                   "Method / reference",
@@ -288,6 +294,7 @@ export default function PayoutLedgerPage() {
                   <td className="px-4">{peso.format(r.binary)}</td>
                   <td className="px-4">{peso.format(r.product_binary)}</td>
                   <td className="px-4">{peso.format(r.rank_bonus)}</td>
+                  <td className="px-4">{peso.format(r.unilevel)}</td>
                   <td className="px-4">{peso.format(r.unallocated)}</td>
                   <td className="px-4">
                     <span

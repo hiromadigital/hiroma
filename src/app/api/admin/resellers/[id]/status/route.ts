@@ -1,7 +1,5 @@
 // src/app/api/admin/resellers/[id]/status/route.ts
 import { NextRequest, NextResponse } from 'next/server'
-import { Prisma } from '@prisma/client'
-import { rankBonusStorageReady } from '@/app/lib/rankBonuses'
 import { createRequiredAuditLog, formatMemberId, getClientInfo } from '@/app/lib/auditLog'
 import { getCurrentUser } from '@/app/lib/auth'
 import prisma from '@/app/lib/prisma'
@@ -69,14 +67,8 @@ export async function PATCH(req: NextRequest, { params }: { params: Promise<{ id
         if (Number(wallet.reserved_balance) > 0) throw new ReservedPayoutBlocksDeactivationError()
 
         const payableRows = await tx.$queryRaw<{ funded_liability: string }[]>`
-          SELECT (
-            COALESCE((SELECT SUM(remaining_amount) FROM direct_referral_reserve_lots WHERE user_id=${userId}), 0)
-            + COALESCE((SELECT SUM(remaining_amount) FROM binary_payable_lots WHERE user_id=${userId}), 0)
-            + COALESCE((SELECT SUM(remaining_amount) FROM product_binary_payable_lots WHERE user_id=${userId}), 0)
-            ${await rankBonusStorageReady(tx)
-              ? Prisma.sql`+ COALESCE((SELECT SUM(remaining_amount) FROM rank_bonus_awards WHERE user_id=${userId}), 0)`
-              : Prisma.empty}
-          )::text AS funded_liability
+          SELECT source_backed_liability::text AS funded_liability
+          FROM wallet_funding_reconciliation WHERE user_id=${userId}
         `
         const walletBalance = Number(wallet.balance)
         const fundedLiability = Number(payableRows[0]?.funded_liability || 0)

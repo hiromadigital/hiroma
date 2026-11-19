@@ -1,3 +1,4 @@
+import Link from 'next/link'
 import { redirect } from 'next/navigation'
 import { getCurrentUser } from '@/app/lib/auth'
 import prisma from '@/app/lib/prisma'
@@ -230,7 +231,10 @@ export default async function BonusesPage({ searchParams }: {
 
   return (
     <main className="mx-auto max-w-5xl space-y-5">
-      <h1 className="text-xl font-semibold text-[#0D1B3E]">Bonuses</h1>
+      <div className="flex items-center justify-between gap-3">
+        <h1 className="text-xl font-semibold text-[#0D1B3E]">Product Binary bonuses</h1>
+        <Link href="/dashboard/admin/bonuses/unilevel" className="text-sm font-semibold underline">Unilevel</Link>
+      </div>
       <form className="flex flex-wrap items-end gap-3 rounded-xl border border-slate-200 bg-white p-4">
         <label className="text-sm">Period
           <select name="period" defaultValue={period} className="mt-1 block rounded border border-slate-300 p-2">
