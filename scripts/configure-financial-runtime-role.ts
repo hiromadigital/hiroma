@@ -62,4 +62,3 @@ main().catch(() => {
   console.error("Financial runtime configuration failed. Verify credentials, target, role attributes and the required migration.");
   process.exitCode = 1;
 });
-
