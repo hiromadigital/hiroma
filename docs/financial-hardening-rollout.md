@@ -12,6 +12,22 @@ A paid and delivered order still attempts Product Binary
 settlement immediately; this cron is the safety net for obligations that remain
 pending or fail because of a temporary error.
 
+Unilevel has its own `/api/cron/process-unilevel` retry worker, also scheduled
+at `0 2 * * *` while this Hobby configuration is retained. Paid/delivered orders
+attempt Unilevel in a separate transaction before binary matching. A failed
+Unilevel credit stays in its own durable retry queue and does not roll back
+binary matching; a failed binary match does not roll back an already committed
+Unilevel credit. At the frequent-scheduler cutover, include this separate worker
+in the per-minute schedule and verify its authenticated retry path as well.
+
+The independent Unilevel migration must be applied and runtime permissions
+verified before enabling the corresponding application release. Roll out the
+migration and deployment together while financial writes are paused: the legacy
+compatibility trigger enqueues Unilevel obligations instead of crediting inside
+the binary transaction. Existing finalized credits remain unchanged. New credits
+use `unilevel-v2`; each original stock receipt funds its original PHP1 levels,
+even if the current level setting is subsequently increased or reduced.
+
 The unpaid-order expiry worker is also temporarily scheduled once daily on
 Hobby. Its 48-hour `payment_due_at` remains authoritative: late proof is
 rejected immediately, while reserved stock is released by the next daily sweep.

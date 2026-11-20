@@ -14,6 +14,7 @@ import { createAuditLog } from '@/app/lib/auditLog'
 import { expireProductPu, addProductPuLot, consumeProductPuFifo } from '@/app/lib/productBinaryExpiry'
 
 import { getProductBinaryPairAmount, getProductBinaryPuPerLeg, PRODUCT_BINARY_MATCH_KEY } from '@/app/lib/productBinaryMatchPolicy'
+import { processDeliveredUnilevelOrder } from '@/app/lib/unilevelSettlement'
 const PESO_PER_POINT = PRODUCT_BINARY_PESO_PER_POINT
 const PRODUCT_BINARY_RETRY_BASE_SECONDS = 30
 const PRODUCT_BINARY_RETRY_MAX_SECONDS = 60 * 60
@@ -87,6 +88,13 @@ async function getRankSnapshot(tx: Tx, packageId: string | null, totalPu: number
  * result is snapshotted, so later rank/package edits cannot rewrite history.
  */
 export async function processDeliveredProductBinaryOrder(orderId: string) {
+  // Separate transaction: binary matching cannot roll back a funded Unilevel
+  // credit, and a failed Unilevel attempt cannot block binary matching.
+  try {
+    await processDeliveredUnilevelOrder(orderId)
+  } catch (error) {
+    console.error('[ORDER UNILEVEL PENDING]', { orderId, error })
+  }
   try {
     return await prisma.$transaction(async (tx) => {
       await tx.$executeRaw`SELECT pg_advisory_xact_lock(hashtext(${'product-binary:' + orderId}))`
@@ -134,10 +142,13 @@ export async function processDeliveredProductBinaryOrder(orderId: string) {
       }
       if (!job.qualified_at) throw new Error('Product Binary settlement lacks its original earning date.')
 
-      const existing = await tx.$queryRaw<{ id: string }[]>`
-        SELECT id::text FROM product_binary_order_events WHERE order_id = ${orderId} LIMIT 1
+      const existing = await tx.$queryRaw<{ id: string; prepared: boolean }[]>`
+        SELECT event.id::text,
+          EXISTS(SELECT 1 FROM public.unilevel_product_order_preparations preparation
+            WHERE preparation.order_event_id=event.id) AS prepared
+        FROM product_binary_order_events event WHERE event.order_id = ${orderId} LIMIT 1
       `
-      if (existing.length) {
+      if (existing.length && !existing[0].prepared) {
         await tx.$executeRaw`
           UPDATE product_binary_settlement_jobs
           SET status='completed',completed_at=CURRENT_TIMESTAMP,last_error=NULL,updated_at=CURRENT_TIMESTAMP
@@ -158,8 +169,8 @@ export async function processDeliveredProductBinaryOrder(orderId: string) {
         gross_margin: Number(job.gross_margin_snapshot),
       }
 
-    const orderEventId = randomUUID()
-    await tx.$executeRaw`
+    const orderEventId = existing[0]?.id ?? randomUUID()
+    if (!existing.length) await tx.$executeRaw`
       INSERT INTO product_binary_order_events(
         id,order_id,buyer_user_id,eligible_units,total_pu,recorded_gross_margin,settlement_job_id
       )
@@ -183,7 +194,11 @@ export async function processDeliveredProductBinaryOrder(orderId: string) {
       ) SELECT user_id::text,source_leg,depth FROM chain ORDER BY depth
     `
     // Match Package Binary's member lock order before touching any member state.
-    for (const userId of [...new Set([order.buyer_id, ...ancestors.map(row => row.user_id)])].sort()) {
+    const sponsors = await tx.$queryRaw<{ user_id: string }[]>`
+      SELECT user_id FROM public.unilevel_qualified_recipients
+      WHERE settlement_job_id=${job.id}::uuid AND user_id IS NOT NULL
+    `
+    for (const userId of [...new Set([order.buyer_id, ...ancestors.map(row => row.user_id), ...sponsors.map(row => row.user_id)])].sort()) {
       await lockFinancialUser(tx, userId)
     }
 
@@ -215,7 +230,8 @@ export async function processDeliveredProductBinaryOrder(orderId: string) {
       SELECT to_regprocedure('public.queue_product_binary_pool_order(uuid,timestamptz,integer)') IS NOT NULL AS ready
     `
     const weeklyPool = poolSchema.ready && (await tx.$queryRaw<{ queued: boolean }[]>`
-      SELECT public.queue_product_binary_pool_order(${orderEventId}::uuid,${settlementAt}::timestamptz,${rateAmount * 100}::integer) AS queued
+      SELECT CASE WHEN EXISTS(SELECT 1 FROM public.product_binary_pool_orders WHERE order_event_id=${orderEventId}::uuid)
+        THEN true ELSE public.queue_product_binary_pool_order(${orderEventId}::uuid,${settlementAt}::timestamptz,${rateAmount * 100}::integer) END AS queued
     `)[0].queued
     if (!weeklyPool && requiresProductBinaryReleaseApproval()) {
       throw new Error('Approved Product Binary settlement could not enter the weekly pool.')
@@ -239,8 +255,8 @@ export async function processDeliveredProductBinaryOrder(orderId: string) {
       const profile = profiles[0]
       if (!profile) continue
       const rank = await getRankSnapshot(tx, profile.package_id, Number(profile.total_pu))
-      // Compensation plan: every Product Binary pair pays a fixed ₱5. Package
-      // and rank values cannot increase the monetary entitlement.
+      // Weekly pairs share the funded pool up to the configured pair-rate cap.
+      // Package and rank values cannot increase that monetary entitlement.
       const effectiveRatePoints = rateAmount / PESO_PER_POINT
       const planCap = getProductBinaryDailyCap(profile.package_name)
 

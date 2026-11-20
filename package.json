@@ -9,6 +9,7 @@
     "lint": "eslint",
     "reset:prelaunch": "tsx scripts/prelaunch-reset.ts",
     "test:all": "tsx --test tests/*.test.ts",
+    "test:unilevel-integration": "tsx --test tests/unilevelSettlement.integration.test.ts",
     "test:binary-accounting": "tsx --test tests/binaryAccounting.test.ts tests/dateRangePresets.test.ts",
     "simulate:binary-5000": "tsx scripts/simulate-binary-5000.ts",
     "verify:binary-accounting": "tsx scripts/verify-binary-accounting.ts",
