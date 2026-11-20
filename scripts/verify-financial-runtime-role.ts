@@ -67,6 +67,8 @@ const protectedTables = [
   "rank_bonus_awards",
   "rank_bonus_payout_consumptions",
   "unilevel_inventory_earmarks",
+  "unilevel_settlement_jobs",
+  "unilevel_product_order_preparations",
   "unilevel_order_allocations",
   "unilevel_qualified_orders",
   "unilevel_qualified_recipients",
@@ -96,6 +98,11 @@ const protectedTables = [
 
 const protectedFinancialFunctions = [
   "public.configure_financial_runtime_role(text)",
+  "public.assert_complete_product_order(uuid)",
+  "public.require_completed_prepared_product_order()",
+  "public.validate_product_binary_order_event_completeness()",
+  "public.enqueue_unilevel_order()",
+  "public.settle_funded_unilevel_order(uuid)",
   "public.capture_unilevel_qualification()",
   "public.snapshot_unilevel_order_allocations()",
   "public.earmark_unilevel_stock()",
@@ -380,6 +387,15 @@ async function main() {
     `, [protectedTables.filter(table => table.startsWith("unilevel_")).map(table => `public.${table}`)]);
     if (unilevelAccess.rows.some(row => !row.safe)) {
       throw new Error("Unilevel financial records must be read-only to the application runtime.");
+    }
+    const unilevelEntries = await client.query<{ allowed: boolean }>(`
+      SELECT has_function_privilege(current_user,signature,'EXECUTE') AS allowed
+      FROM unnest(ARRAY['public.process_unilevel_order(text)',
+        'public.claim_pending_unilevel_orders(integer)',
+        'public.record_unilevel_retry(text,text)']) AS entry(signature)
+    `);
+    if (unilevelEntries.rows.some(row => !row.allowed)) {
+      throw new Error("Unilevel requires its guarded settlement and retry entry points.");
     }
 
     const unsafeObjects = objects.rows.filter(

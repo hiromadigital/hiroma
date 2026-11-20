@@ -45,7 +45,9 @@ test('settlement retains independent order-level idempotency barriers', () => {
   const accounting = read('../prisma/migrations/20260809023000_product_binary_accounting/migration.sql')
 
   assert.match(processor, /pg_advisory_xact_lock\(hashtext\(/)
-  assert.match(processor, /WHERE order_id = \$\{orderId\} LIMIT 1/)
+  assert.match(processor, /WHERE event\.order_id = \$\{orderId\} LIMIT 1/)
+  assert.match(processor, /unilevel_product_order_preparations/)
+  assert.match(processor, /existing\.length && !existing\[0\]\.prepared/)
   assert.match(processor, /status='completed'/)
   assert.match(accounting, /"order_id" TEXT NOT NULL UNIQUE/)
 })

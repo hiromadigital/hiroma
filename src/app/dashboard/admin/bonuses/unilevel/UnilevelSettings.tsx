@@ -39,7 +39,7 @@ export default function UnilevelSettings({ currentLevels }: { currentLevels: num
       <p className="py-2 text-sm">New allocation per bottle <strong>{valid ? 'PHP ' + count.toFixed(2) : '—'}</strong></p>
       <button disabled={saving || !valid || count === currentLevels} className="rounded bg-[#0D1B3E] px-4 py-2 text-sm text-white disabled:opacity-40">Save configuration</button>
     </form>
-    <p className="text-sm text-slate-600">Existing stock keeps its original funding. If an order uses stock funded for fewer levels, its traced funding is divided across its recorded levels, up to PHP 1 per level per bottle. Ineligible levels keep their position and their share is retained for Hiroma.</p>
+    <p className="text-sm text-slate-600">Existing stock keeps its original funded levels at PHP 1 per level per bottle. Increasing the setting funds additional levels on new stock receipts; it does not dilute the original levels or add funding to old stock. Ineligible levels keep their position and their share is retained for Hiroma.</p>
     {message && <p role="status" className="text-sm">{message}</p>}
     {confirming && <SecurityPinModal title="Confirm Unilevel configuration" description="Authorize the level count and funding for future transactions."
       confirmLabel="Save configuration" loading={saving} onClose={() => setConfirming(false)} onConfirm={save} />}
